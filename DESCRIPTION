@@ -1,0 +1,12 @@
+Package: start
+Type: Package
+Title: start, STorage and Analysis of Reaction Time data
+Version: 1.0-1
+Date:  2015-10-27
+Author: Wouter D. Weeda
+Maintainer: Wouter D. Weeda <w.d.weeda@fsw.leidenuniv.nl>
+Depends: R (>= 2.12.0)
+Description: start stores reaction time data and contains tools for pre-processing and analysis. All with clarity of the processing/analysis steps in mind.
+URL: https://github.com/wdweeda/start
+License: GPL-2
+LazyLoad: yes
