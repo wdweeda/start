@@ -1,0 +1,247 @@
+#################################################
+# start: RT storage and analysis                #
+# S4 CLASS Definitions (import from rtanalyze)  #
+# (c) 2015, Wouter Weeda, Leiden University     #
+#################################################
+
+
+
+#[CONTAINS]
+#version
+#experiment
+#subject
+#rtdata
+#rtsummary
+#fastdm
+#fastdmoutput
+#import
+
+
+## start version class (version is set here)
+setClass(
+	Class='version',
+	representation=representation(
+		version='numeric',
+		build='numeric',
+		update='numeric',
+		svnrev='numeric'
+	),
+	prototype=prototype(
+		version=1,
+		build=0,
+		update=2,
+		svnrev=0
+	)#,
+	#package='start'
+)
+
+
+## start subject
+setClass(
+		Class='subjects',
+		representation=representation(
+				experimentname='character', 	#experiment NAME
+				variables='data.frame',			#between-subject variables values (ID plus factors and covariates)
+				variable.levels = 'ANY',		#b-s variable levels
+				rtdata='ANY',					#list of rtdata objects
+				fdmdata='ANY',					#list of fmddata objects
+				valid='logical',				#is subject valid
+				outliers='list',
+				remarks='character',			#remarks
+				version='ANY'					#version
+
+		),
+		prototype=prototype(
+				version=new('version')
+
+		)#,
+#package='start'
+)
+
+
+##subject outlier
+setClass(
+		Class='subjectoutlier',
+		representation=representation(
+				FUN='ANY',
+				which='ANY',
+				criteria='list',
+				pre.total='numeric',
+				rem.total='numeric',
+				post.total='numeric',
+				rem.prop='numeric',
+				marked.values='numeric',
+				remark='character',
+				version='ANY'
+		),
+		prototype=prototype(
+				version=new('version'),
+				pre.total=NULL,
+				rem.total=NULL,
+				post.total=NULL,
+				rem.prop=NULL,
+				marked.values=numeric(0),
+				remark=character(0)
+		)
+)
+
+## start outlier
+setClass(
+		Class='outlier',
+		representation=representation(
+				type='character',
+				method='character',
+				minmax='numeric',
+				pre.total='numeric',
+				rem.total='numeric',
+				rem.low='numeric',
+				rem.high='numeric',
+				rem.prop='numeric',
+				post.total='numeric',
+				selection.total = 'numeric',
+				selection.vector = 'numeric',
+				marked.values='numeric',
+				ewma.stats='ANY',
+				remark='character',
+				version='ANY'
+				),
+				prototype=prototype(
+						version=new('version'),
+						type='none',
+						method='none',
+						minmax=c(-Inf,Inf),
+						pre.total=NULL,
+						rem.total=NULL,
+						rem.low=NULL,
+						rem.high=NULL,
+						rem.prop=NULL,
+						post.total=NULL,
+						marked.values=numeric(0),
+						remark=character(0)
+						)
+		)
+
+## start rtdata
+setClass(
+		Class='rtdata',
+		representation=representation(
+				rt='numeric',					#vector of ReactionTimes (in ms)
+				rt.units = 'character',			#indicator of units of RT ('ms','s')
+				correct='logical',				#correct or incorrect response
+				valid='logical',				#valid RT (FALSE if outlier)
+				conditions='data.frame',		#within-subject conditions
+				condition.levels='ANY',			#within-subject levels
+				remarks='character',			#add remarks (pre-procsteps)
+				outlier.method='character',		#outlier method [DEFUNCT]
+				outlier.minmax='numeric',		#outlier.minmax [DEFUNCT]
+				outlier.percentage='numeric',	#outlier percentage [DEFUNCT]
+				outliers='ANY',					#outlier sequence
+				summary='ANY',					#summary measures for dataset
+				import='ANY',          #import info
+				version='ANY'					#version
+
+		),
+		prototype=prototype(
+				rt.units = 'ms',
+				version=new('version')
+
+		)#,
+#package='start'
+)
+
+## start rtsummary
+setClass(
+		Class='rtsummary',
+		representation=representation(
+				quantiles='data.frame',			#quantiles (per within condition)
+				meanRT='data.frame',			#mean RT (per within condition)
+				medianRT='data.frame',			#median RT (per within condition)
+				sdRT='data.frame',				#standarddeviation of RT (per within condition)
+				pC='data.frame',				#percentage correct (per within condition)
+				version='ANY'					#version
+
+		),
+		prototype=prototype(
+				version=new('version')
+
+		)#,
+#package='start'
+)
+
+#fastdm
+setClass(
+		Class='fastdm',
+		representation=representation(
+				conditions='character',
+				format='character',
+				depends='list',
+				set='list',
+				datadir = 'character',
+				dataname='character',
+				outputname='character',
+				bootstrap.type='character',
+				bootstrap.num = 'numeric',
+				subjectlist='character',
+				appdir = 'character',
+				method = 'character'
+		),
+		prototype(
+				conditions = c('condition'),
+				format = c('TIME','RESPONSE','condition'),
+				depends = list(c('v','condition'),c('a','condition'),c('t0','condition')),
+				set = list(c('zr',0.5)),
+				dataname = 'ppn*.txt',
+				outputname = 'results_ppn*.txt',
+				appdir = '/usr/local/bin/',
+				bootstrap.type = 'det',
+				bootstrap.num = 1,
+				subjectlist= '',
+				datadir = '',
+				method = 'KS'
+		)
+)
+
+#fastdmoutput
+setClass(
+		Class='fdmoutput',
+		representation=representation(
+				ID='ANY',
+				fdmex='ANY',
+				data='ANY',
+				parameters='ANY',
+				estimates='ANY',
+				bootstrapdata='ANY',
+				outputlog = 'ANY',
+				version = 'ANY'
+		),
+		prototype=prototype(
+			version=new('version')
+	)
+)
+
+#import
+setClass(
+  Class='import',
+  representation=representation(
+    filename='character',
+    separator='character',
+    header='logical',
+    skip='numeric',
+    decimal='character',
+    rt.col='ANY',
+    rt.units = 'character',
+    cic.col='ANY',
+    con.col='ANY',
+    remarks='ANY',
+    version='ANY'
+  ),
+  prototype=prototype(
+    separator='\t',
+    header=T,
+    skip=0,
+    rt.units = 'ms',
+    decimal='.',
+    version=new('version')
+)#,
+  #package='start'
+)
