@@ -1,18 +1,23 @@
 #################################################
 # start: RT storage and analysis                #
+# import functions                              #
 # (c) 2015, Wouter Weeda, Leiden University     #
 #################################################
 
 #importFunctions
+#importMultiple
 
 readRTfile <- function(filename,import.control)
 #read a single file based on import.control settings
 {
   #set filename to importcontrol frame
-  import.control@filename = filename
+  fn = strsplit(strsplit(filename,'\\.')[[1]],'\\/')[[1]]
+  import.control@filename = fn[length(fn)]
 
   #read in the file according to the import.control settings
-  dat = read.table(import.control@filename,sep=import.control@separator,header=import.control@header,skip=import.control@skip,stringsAsFactors=F,fill=T,dec=import.control@decimal)
+  dat = try(read.table(filename,sep=import.control@separator,header=import.control@header,skip=import.control@skip,stringsAsFactors=F,fill=T,dec=import.control@decimal))
+
+  if(class(dat)=='try-error') stop(paste0('[readRTfile] Unable to read file ',filename))
 
   #change names of columns to numbers when necessary
   import.control@rt.col = n2n(dat,import.control@rt.col)
@@ -27,10 +32,14 @@ readRTfile <- function(filename,import.control)
   wrn = character(0)
 
   #checks:
+
   #rtvec
+  if(length(rtvec)<=0) stop('[readRTfile] no lines to read in.\n')
+
   if(!is.numeric(rtvec)) {
-    wrn = c(wrn,'[readRTfile] rtvec is not numeric, forcing to char >> numeric.\n')
-    rtvec = as.character(as.numeric(rtvec))
+    stop('[readRTfile] rtvec is not numeric.')
+    #wrn = c(wrn,'[readRTfile] rtvec is not numeric, forcing to char >> numeric.\n')
+    #rtvec = as.numeric(as.character(rtvec))
   }
 
   #correct incorrect
@@ -101,12 +110,12 @@ readMultiple <- function(path,import.control,patt=NULL,bsinfo=NULL)
   if(nsub<=0) stop('[readMultiple] No files in path.')
   fnstrp = list.files(path,pattern=patt,full.names=F)
 
+  wrn = character(0)
+
   #make new subjects object
   sdat = new('subjects')
   sdat@valid = rep(TRUE,nsub)
   sdat@rtdata = vector('list',nsub)
-
-  bsframe = numeric(0)
 
   #loop over subjects
   for(i in 1:nsub) {
@@ -120,26 +129,22 @@ readMultiple <- function(path,import.control,patt=NULL,bsinfo=NULL)
     }
     sdat@rtdata[[i]] = rtdat
 
-    #add additional bs info
-    nm = strsplit(fnstrp[i],'\\.')[[1]]
-    nm = nm[-(length(nm))]
-
-    if(!is.null(bsinfo)) {
-      bsframe = rbind(bsframe,c(nm,bsinfo[grep(fnstrp[i],bsinfo[,1]),]))
-    } else {
-      bsframe = c(bsframe,nm)
-    }
-
   }
 
-  bsframe = as.data.frame(bsframe)
-  names(bsframe)[1]='fileID'
+  #match bsinfo to filenames
+  ord = match(fnstrp,bsinfo[,1])
+  bsframe = data.frame(fileID=fnstrp,bsinfo[ord,])
   sdat@variables = bsframe
 
+  #add variable levels
   clist = list(ncol(bsframe))
-  for(i in 1:ncol(bsframe)) clist[[i]] = levels(bsframe[,i])
+  for(i in 1:ncol(bsframe)) {
+    if(is.factor(bsframe[,i])) clist[[i]] = levels(bsframe[,i])
+  }
   sdat@variable.levels = clist
+  sdat@remarks = c(sdat@remarks,wrn)
 
+  #return subjects object with rtdata
   return(sdat)
 
 }

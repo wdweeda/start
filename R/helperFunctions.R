@@ -1,5 +1,6 @@
 #################################################
 # start: RT storage and analysis                #
+# helper functions                              #
 # (c) 2015, Wouter Weeda, Leiden University     #
 #################################################
 
