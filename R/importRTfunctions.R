@@ -92,5 +92,55 @@ readRTfile <- function(filename,import.control)
 
 }
 
+readMultiple <- function(path,import.control,patt=NULL,bsinfo=NULL)
+#read in multiple files and return subjects object
+{
+  #list.files
+  fns = list.files(path,pattern=patt,full.names=T)
+  nsub = length(fns)
+  if(nsub<=0) stop('[readMultiple] No files in path.')
+  fnstrp = list.files(path,pattern=patt,full.names=F)
 
+  #make new subjects object
+  sdat = new('subjects')
+  sdat@valid = rep(TRUE,nsub)
+  sdat@rtdata = vector('list',nsub)
+
+  bsframe = numeric(0)
+
+  #loop over subjects
+  for(i in 1:nsub) {
+
+    #read in rtdata
+    rtdat = try(readRTfile(fns[i],import.control))
+    if(class(rtdat)=='try-error') {
+      rtdat=NULL
+      sdat@valid[i] = FALSE
+      wrn = c(wrn,paste0('[readMultiple] Error in readRTfile for ',fnstrp[i],'.\n'))
+    }
+    sdat@rtdata[[i]] = rtdat
+
+    #add additional bs info
+    nm = strsplit(fnstrp[i],'\\.')[[1]]
+    nm = nm[-(length(nm))]
+
+    if(!is.null(bsinfo)) {
+      bsframe = rbind(bsframe,c(nm,bsinfo[grep(fnstrp[i],bsinfo[,1]),]))
+    } else {
+      bsframe = c(bsframe,nm)
+    }
+
+  }
+
+  bsframe = as.data.frame(bsframe)
+  names(bsframe)[1]='fileID'
+  sdat@variables = bsframe
+
+  clist = list(ncol(bsframe))
+  for(i in 1:ncol(bsframe)) clist[[i]] = levels(bsframe[,i])
+  sdat@variable.levels = clist
+
+  return(sdat)
+
+}
 
