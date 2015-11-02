@@ -10,14 +10,21 @@
 readRTfile <- function(filename,import.control)
 #read a single file based on import.control settings
 {
+  stopflag = FALSE
+
   #set filename to importcontrol frame
   fn = strsplit(strsplit(filename,'\\.')[[1]],'\\/')[[1]]
   import.control@filename = fn[length(fn)]
 
   #read in the file according to the import.control settings
-  dat = try(read.table(filename,sep=import.control@separator,header=import.control@header,skip=import.control@skip,stringsAsFactors=F,fill=T,dec=import.control@decimal))
+  dat = try(read.table(filename,sep=import.control@separator,header=import.control@header,skip=import.control@skip,stringsAsFactors=F,fill=T,dec=import.control@decimal),silen=T)
 
-  if(class(dat)=='try-error') stop(paste0('[readRTfile] Unable to read file ',filename))
+  if(class(dat)=='try-error') {
+    warning(paste0('[readRTfile] Unable to read file ',filename))
+    stopflag = TRUE
+  }
+
+  if(stopflag) return(import.control)
 
   #change names of columns to numbers when necessary
   import.control@rt.col = n2n(dat,import.control@rt.col)
@@ -34,13 +41,23 @@ readRTfile <- function(filename,import.control)
   #checks:
 
   #rtvec
-  if(length(rtvec)<=0) stop('[readRTfile] no lines to read in.\n')
+  if(length(rtvec)<=0) {
+    wrn = c(wrn,'[readRTfile] no lines to read in.')
+    import.control@remarks = wrn
+    warning(wrn)
+    stopflag = TRUE
+  }
+
+  if(stopflag) return(import.control)
 
   if(!is.numeric(rtvec)) {
-    stop('[readRTfile] rtvec is not numeric.')
-    #wrn = c(wrn,'[readRTfile] rtvec is not numeric, forcing to char >> numeric.\n')
-    #rtvec = as.numeric(as.character(rtvec))
+    wrn = c(wrn,'[readRTfile] rtvec is not numeric.')
+    import.control@remarks = wrn
+    warning(wrn)
+    stopflag = TRUE
   }
+
+  if(stopflag) return(import.control)
 
   #correct incorrect
   if(!is.logical(cicvec)) {
@@ -49,17 +66,26 @@ readRTfile <- function(filename,import.control)
         #force dichotomous to logical
         ncic = rep(FALSE,length(cicvec))
         ncic[which(cicvec==names(table(cicvec,useNA='no'))[1])]=TRUE
-        wrn = c(wrn,paste0('[readRTfile] Forcing cicvec to logical with ',names(table(cicvec,useNA='no'))[1],'=TRUE and ',names(table(cicvec,useNA='no'))[2],'=FALSE.\n'))
+        wrn = c(wrn,paste0('[readRTfile] Forcing cicvec to logical with ',names(table(cicvec,useNA='no'))[1],'=TRUE and ',names(table(cicvec,useNA='no'))[2],'=FALSE.'))
         cicvec = ncic
       } else {
-        #no determination, set all to FALSE
-        cicvec[which(!is.na(cicvec))] = FALSE
-        wrn = c(wrn,'[readRTfile] Cannot determine correct/incorrect! Setting all responses to FALSE.\n')
+        if(length(table(cicvec,useNA='no'))==1) {
+          #no determination, set all to TRUE
+          cicvec = as.logical(cicvec)
+          wrn = c(wrn,'[readRTfile] Constant in correct/incorrect, assuming perfect score (forcing as.logical).')
+        } else {
+          #no determination, set all to FALSE
+          nas = which(!is.na(cicvec))
+          ncic = rep(FALSE,length(cicvec))
+          if(!length(nas)==0) {ncic[-nas] = FALSE}
+          cicvec = ncic
+          wrn = c(wrn,'[readRTfile] Cannot determine correct/incorrect! Setting all responses to FALSE.')
+        }
       }
     } else {
       #binary 0/1 to FALSE/TRUE
       cicvec = as.logical(cicvec)
-      wrn = c(wrn,'[readRTfile] Forcing 0/1 to FALSE/TRUE.\n')
+      wrn = c(wrn,'[readRTfile] Forcing 0/1 to FALSE/TRUE.')
     }
 
   }
@@ -91,7 +117,6 @@ readRTfile <- function(filename,import.control)
   #import.control and remarks
   import.control@remarks = c(import.control@remarks,wrn)
   rtdat@import  = import.control
-  rtdat@remarks = c(rtdat@remarks,wrn)
 
   #show warnings
   warnings(wrn)
@@ -121,14 +146,14 @@ readMultiple <- function(path,import.control,patt=NULL,bsinfo=NULL)
   for(i in 1:nsub) {
 
     #read in rtdata
-    rtdat = try(readRTfile(fns[i],import.control))
-    if(class(rtdat)=='try-error') {
-      rtdat=NULL
+    rtdat = try(suppressWarnings(readRTfile(fns[i],import.control)),silen=T)
+    if(class(rtdat)=='import') {
+      rtdat2 = new('rtdata')
+      rtdat2@import = rtdat
+      rtdat = rtdat2
       sdat@valid[i] = FALSE
-      wrn = c(wrn,paste0('[readMultiple] Error in readRTfile for ',fnstrp[i],'.\n'))
     }
     sdat@rtdata[[i]] = rtdat
-
   }
 
   #match bsinfo to filenames
@@ -142,7 +167,6 @@ readMultiple <- function(path,import.control,patt=NULL,bsinfo=NULL)
     if(is.factor(bsframe[,i])) clist[[i]] = levels(bsframe[,i])
   }
   sdat@variable.levels = clist
-  sdat@remarks = c(sdat@remarks,wrn)
 
   #return subjects object with rtdata
   return(sdat)

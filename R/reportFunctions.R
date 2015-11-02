@@ -10,26 +10,25 @@ importReport <- function(object)
 {
 
   if(class(object)=='subjects') {
+    tdat = character(0)
+    cat(sprintf('%20s %10s %s\n','[filename]','[nimports]','[remarks]'))
     for(i in 1:length(object@rtdata)) {
       if(object@valid[i]) {
-        importReport(object@rtdata[[i]])
+        tdat = rbind(tdat,importReport(object@rtdata[[i]]))
       } else {
-        os = c(paste0('File    : ',object@variables[i,1],'\n'),
-               paste0('  error in read in. check remarks\n'))
-        cat(os)
+        #if object is not valid
+        tdat = rbind(tdat,c(object@rtdata[[i]]@import@filename,NA,object@rtdata[[i]]@import@remarks))
       }
-
+      cat(sprintf('%20s %10i %0s\n',tdat[i,1],as.integer(tdat[i,2]),tdat[i,3]))
     }
-    cat(c(paste0('[overall remarks]\n'),paste0(object@remarks)))
+    return(invisible(tdat))
   }
 
   if(class(object)=='rtdata') {
-    #get number of rows,
-    os = c(paste0('File    : ',object@import@filename,'\n'),
-    paste0('import : ',length(object@rt),'\n'),
-    paste0('remarks: ','\n'),
-    paste0(object@import@remarks))
-    cat(os)
+    rem = object@import@remarks
+    if(length(rem)==0) rem=''
+    #browser()
+    return(data.frame(filename=object@import@filename,nimport=length(object@rt),remarks=rem,stringsAsFactors=F))
   }
 
 }
