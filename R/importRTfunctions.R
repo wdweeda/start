@@ -75,11 +75,9 @@ readRTfile <- function(filename,import.control)
           wrn = c(wrn,'[readRTfile] Constant in correct/incorrect, assuming perfect score (forcing as.logical).')
         } else {
           #no determination, set all to FALSE
-          nas = which(!is.na(cicvec))
-          ncic = rep(FALSE,length(cicvec))
-          if(!length(nas)==0) {ncic[-nas] = FALSE}
-          cicvec = ncic
-          wrn = c(wrn,'[readRTfile] Cannot determine correct/incorrect! Setting all responses to FALSE.')
+          wrn = c(wrn,'[readRTfile] Cannot determine correct/incorrect!')
+          import.control@remarks = wrn
+          stopflag = TRUE
         }
       }
     } else {
@@ -87,8 +85,9 @@ readRTfile <- function(filename,import.control)
       cicvec = as.logical(cicvec)
       wrn = c(wrn,'[readRTfile] Forcing 0/1 to FALSE/TRUE.')
     }
-
   }
+
+  if(stopflag) return(import.control)
 
   #conditions
   conditions = as.data.frame(conditions)
