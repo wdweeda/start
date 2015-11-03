@@ -19,6 +19,11 @@
 markPostError <- function(rtdat)
 #mark post-error trials as invalid
 {
+  #check object type and run accordingly
+  argslist = ls()
+  func = sys.call()
+  out = recurSwitch(rtdat,func,argslist)
+  if(class(out)=='subjects') return(out)
 
 	count_posterror = 0
 	pre.len = length(.rtdata.rt(rtdat)[.rtdata.valid(rtdat)==TRUE])
@@ -57,51 +62,15 @@ markPostError <- function(rtdat)
 
 }
 
-markNA <- function(rtdat)
-#mark NA  trials as invalid
-{
-
-	pre.len = length(.rtdata.rt(rtdat)[.rtdata.valid(rtdat)==TRUE])
-	pre.shadow = .rtdata.valid(rtdat)
-
-	count_postNA = 0
-
-	for(i in 1:length(.rtdata.rt(rtdat)))
-	{
-		if(is.na(.rtdata.rt(rtdat)[i])) {
-			if(.rtdata.valid(rtdat)[i]==TRUE) count_postNA = count_postNA + 1
-			.rtdata.valid(rtdat)[i]=FALSE
-		}
-	}
-
-
-	outlier = new('outlier')
-
-	.outlier.type(outlier) = 'NA'
-	.outlier.method(outlier) = 'remove'
-
-	.outlier.minmax(outlier) = numeric(0)
-	.outlier.pre.total(outlier) = pre.len
-	.outlier.rem.total(outlier) = count_postNA
-	.outlier.rem.low(outlier) = numeric(0)
-	.outlier.rem.high(outlier) = numeric(0)
-	.outlier.rem.prop(outlier) = .outlier.rem.total(outlier) / .outlier.pre.total(outlier)
-	.outlier.post.total(outlier) = length(.rtdata.rt(rtdat)[.rtdata.valid(rtdat)==TRUE])
-	.outlier.marked.values(outlier) = which(apply(cbind(pre.shadow,.rtdata.valid(rtdat)),1,sum)==1)
-	.outlier.remark(outlier) = ''
-
-	.rtdata.outliers(rtdat) = c(.rtdata.outliers(rtdat),outlier)
-
-	#add remarks
-	.rtdata.remarks(rtdat) = c(.rtdata.remarks(rtdat),'marked NA\'s as invalid.')
-
-	return(rtdat)
-
-}
 
 markWarmUp <- function(rtdat,at.each.condition=NULL,numtrials=5)
 #mark trials at beginning of a condition as invalid
 {
+  #check object type and run accordingly
+  argslist = ls()
+  func = sys.call()
+  out = recurSwitch(rtdat,func,argslist)
+  if(class(out)=='subjects') return(out)
 
 	pre.len = length(.rtdata.rt(rtdat)[.rtdata.valid(rtdat)==TRUE])
 	pre.shadow = .rtdata.valid(rtdat)
@@ -155,12 +124,19 @@ markWarmUp <- function(rtdat,at.each.condition=NULL,numtrials=5)
 }
 
 markOutliers <-
-function(rtdat,which.condition=NULL,method.min=c('abs','sd','ewma'),method.max=c('abs','sd'),sdfac=3,rtmin=200,rtmax=2500,ewma.control=ewma.control())
+function(rtdat,which.condition=NULL,method.min=c('abs','sd','ewma'),method.max=c('abs','sd'),sdfac=3,rtmin=200,rtmax=2500,ewma.control=ewma.control.options())
 #mark outliers based on on absolute values or SD
 {
+  #check object type and run accordingly
+  argslist = ls()
+  func = sys.call()
+  out = recurSwitch(rtdat,func,argslist)
+  if(class(out)=='subjects') return(out)
 
-	method.min = match.arg(method.min,c('abs','sd','ewma'))
-	method.max = match.arg(method.max,c('abs','sd','ewma'))
+
+	method.min = match.arg(method.min,c('abs','sd','ewma'),several.ok=TRUE)[1]
+	method.max = match.arg(method.max,c('abs','sd','ewma'),several.ok=TRUE)[1]
+	#browser()
 
 	if(missing(which.condition)) which.condition=NULL
 
@@ -304,7 +280,13 @@ function(rtdat,which.condition=NULL,method.min=c('abs','sd','ewma'),method.max=c
 markCondition <- function(rtdat,condition,value)
 #mark an entire condition as invaldi
 {
-	pre.len = length(.rtdata.rt(rtdat)[.rtdata.valid(rtdat)==TRUE])
+  #check object type and run accordingly
+  argslist = ls()
+  func = sys.call()
+  out = recurSwitch(rtdat,func,argslist)
+  if(class(out)=='subjects') return(out)
+
+  pre.len = length(.rtdata.rt(rtdat)[.rtdata.valid(rtdat)==TRUE])
 	pre.shadow = .rtdata.valid(rtdat)
 
 	count_postCR = 0
@@ -353,6 +335,53 @@ markCondition <- function(rtdat,condition,value)
 	.rtdata.remarks(rtdat) = c(.rtdata.remarks(rtdat),paste('marked conditions (',paste(txt,collapse=','),') as invalid.',sep=''))
 
 	return(rtdat)
+
+}
+
+markNA <- function(rtdat)
+#mark NA  trials as invalid
+{
+  #check object type and run accordingly
+  argslist = ls()
+  func = sys.call()
+  out = recurSwitch(rtdat,func,argslist)
+  if(class(out)=='subjects') return(out)
+
+  pre.len = length(.rtdata.rt(rtdat)[.rtdata.valid(rtdat)==TRUE])
+  pre.shadow = .rtdata.valid(rtdat)
+
+  count_postNA = 0
+
+  for(i in 1:length(.rtdata.rt(rtdat)))
+  {
+    if(is.na(.rtdata.rt(rtdat)[i])) {
+      if(.rtdata.valid(rtdat)[i]==TRUE) count_postNA = count_postNA + 1
+      .rtdata.valid(rtdat)[i]=FALSE
+    }
+  }
+
+
+  outlier = new('outlier')
+
+  .outlier.type(outlier) = 'NA'
+  .outlier.method(outlier) = 'remove'
+
+  .outlier.minmax(outlier) = numeric(0)
+  .outlier.pre.total(outlier) = pre.len
+  .outlier.rem.total(outlier) = count_postNA
+  .outlier.rem.low(outlier) = numeric(0)
+  .outlier.rem.high(outlier) = numeric(0)
+  .outlier.rem.prop(outlier) = .outlier.rem.total(outlier) / .outlier.pre.total(outlier)
+  .outlier.post.total(outlier) = length(.rtdata.rt(rtdat)[.rtdata.valid(rtdat)==TRUE])
+  .outlier.marked.values(outlier) = which(apply(cbind(pre.shadow,.rtdata.valid(rtdat)),1,sum)==1)
+  .outlier.remark(outlier) = ''
+
+  .rtdata.outliers(rtdat) = c(.rtdata.outliers(rtdat),outlier)
+
+  #add remarks
+  .rtdata.remarks(rtdat) = c(.rtdata.remarks(rtdat),'marked NA\'s as invalid.')
+
+  return(rtdat)
 
 }
 
@@ -557,7 +586,7 @@ function(rtdata,accdata,lambda=.01,c0=.5,sigma0=.5,L=1.5,abslower=0,select=c('ma
 
 }
 
-ewma.control <- function(lambda=.01,c0=.5,sigma0=.5,L=1.5,select='auto',order.rt=TRUE)
+ewma.control.options <- function(lambda=.01,c0=.5,sigma0=.5,L=1.5,select='auto',order.rt=TRUE)
 #default ewma control list
 {
 	return(list(lambda=lambda,c0=c0,sigma0=sigma0,L=L,select=select,order.rt=order.rt))
